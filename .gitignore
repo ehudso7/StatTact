@@ -15,8 +15,9 @@ build
 dist
 
 # Environment variables
-.env
-.env.local
+frontend./env.local
+frontend/.env.production
+backend/.env.local
 .env.development.local
 .env.test.local
 .env.production.local
@@ -34,3 +35,4 @@ __pycache__/
 *$py.class
 venv/
 .env
+frontend/.env.production
