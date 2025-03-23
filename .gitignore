@@ -38,5 +38,3 @@ __pycache__/
 *.py[cod]
 *$py.class
 venv/
-.env
-frontend/.env.production
