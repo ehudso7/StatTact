@@ -15,12 +15,16 @@ build
 dist
 
 # Environment variables
-frontend./env.local
-frontend/.env.production
-backend/.env.local
+.env
+.env.local
 .env.development.local
 .env.test.local
 .env.production.local
+frontend/.env
+frontend/.env.local
+frontend/.env.production
+backend/.env
+backend/.env.local
 
 # Debug
 npm-debug.log*
