@@ -9,9 +9,15 @@ import requests
 import openai
 
 # Load environment variables
-load_dotenv()
+load_dotenv(".env.local")  # Specify the file to load
+
+# Initialize API keys
 openai.api_key = os.getenv("OPENAI_API_KEY")
 football_api_key = os.getenv("FOOTBALL_API_KEY")
+
+# Debug print
+print("OpenAI API Key set:", openai.api_key is not None)
+print("Football API Key set:", football_api_key is not None)
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -38,6 +44,33 @@ class TacticsRequest(BaseModel):
 @app.get("/")
 async def root():
     return {"message": "Welcome to the StatTact AI Backend!", "status": "operational"}
+
+# POST endpoint for fetching teams
+@app.get("/fetch-teams")
+async def fetch_teams():
+    try:
+        # For demo purposes, return a list of popular teams
+        # In production, you might fetch this from an external API
+        teams = [
+            {"id": 1, "name": "Arsenal", "country": "England", "league": "Premier League"},
+            {"id": 2, "name": "Chelsea", "country": "England", "league": "Premier League"},
+            {"id": 3, "name": "Liverpool", "country": "England", "league": "Premier League"},
+            {"id": 4, "name": "Manchester City", "country": "England", "league": "Premier League"},
+            {"id": 5, "name": "Manchester United", "country": "England", "league": "Premier League"},
+            {"id": 6, "name": "Tottenham Hotspur", "country": "England", "league": "Premier League"},
+            {"id": 7, "name": "Bayern Munich", "country": "Germany", "league": "Bundesliga"},
+            {"id": 8, "name": "Borussia Dortmund", "country": "Germany", "league": "Bundesliga"},
+            {"id": 9, "name": "Barcelona", "country": "Spain", "league": "La Liga"},
+            {"id": 10, "name": "Real Madrid", "country": "Spain", "league": "La Liga"},
+            {"id": 11, "name": "Paris Saint-Germain", "country": "France", "league": "Ligue 1"},
+            {"id": 12, "name": "Juventus", "country": "Italy", "league": "Serie A"},
+            {"id": 13, "name": "AC Milan", "country": "Italy", "league": "Serie A"},
+            {"id": 14, "name": "Inter Milan", "country": "Italy", "league": "Serie A"}
+        ]
+        
+        return {"teams": teams}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # POST endpoint for generating tactics
 @app.post("/generate-tactics/")

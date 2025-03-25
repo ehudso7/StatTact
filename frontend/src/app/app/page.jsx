@@ -2,6 +2,9 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
+// Updated import for the API services
+import { fetchTeams as fetchTeamsApi, generateFormation as generateFormationApi } from '@/services/api';
+
 export default function Home() {
   const [team, setTeam] = useState("");
   const [opponent, setOpponent] = useState("");
@@ -20,6 +23,7 @@ export default function Home() {
   const [showSimulation, setShowSimulation] = useState(false);
   const [simulationResult, setSimulationResult] = useState(null);
   const [leaderboardData, setLeaderboardData] = useState([]);
+  const [teamsList, setTeamsList] = useState([]); // New state for storing teams from API
 
   // Initialize dark mode from system preference
   useEffect(() => {
@@ -42,8 +46,21 @@ export default function Home() {
       // Mock community data - in a real app, this would come from an API
       generateMockCommunityData();
       generateMockLeaderboardData();
+      
+      // Fetch teams from the API
+      fetchTeams();
     }
   }, []);
+  
+  // Fetch teams from the API
+  const fetchTeams = async () => {
+    try {
+      const teams = await fetchTeamsApi();
+      setTeamsList(teams);
+    } catch (error) {
+      console.error("Error fetching teams:", error);
+    }
+  };
   
   // Generate mock community data for demonstration
   const generateMockCommunityData = () => {
@@ -128,20 +145,23 @@ export default function Home() {
     }, 300);
     
     try {
-      // In a real app, this would call your backend API
-      // For demo purposes, we'll simulate an API response
-      const result = generateMockTacticalAnalysis(team, opponent);
+      // Call the actual API instead of using mock data
+      const result = await generateFormationApi(team, opponent);
+      
+      // Check if the API returned a result, otherwise use mock data as fallback
+      const finalResult = result || generateMockTacticalAnalysis(team, opponent);
+      
       setTimeout(() => {
-        setTactics(result);
+        setTactics(finalResult);
         
         // Add to history
         const historyItem = { 
           id: Date.now(), 
           team, 
           opponent, 
-          result, 
+          result: finalResult, 
           date: new Date().toLocaleString(),
-          formation: extractFormation(result)
+          formation: extractFormation(finalResult)
         };
         
         setHistory(prev => {
@@ -711,8 +731,7 @@ This tactical approach leverages ${team}'s strengths while targeting ${opponent}
                 justifyContent: "center",
                 fontSize: "0.7rem",
                 fontWeight: "bold",
-                boxShadow: "0 0 0 2px white, 0 4
-		px 6px rgba(0, 0, 0, 0.1)",
+                boxShadow: "0 0 0 2px white, 0 4px 6px rgba(0, 0, 0, 0.1)",
                 transition: "all 0.15s ease-in-out"
               }}
               onMouseOver={(e) => {
@@ -1562,8 +1581,8 @@ This tactical approach leverages ${team}'s strengths while targeting ${opponent}
                   gap: "0.5rem",
                   marginBottom: "1rem"
                 }}>
-                 <div style={{
-		   width: "1.5rem",
+                  <div style={{
+                    width: "1.5rem",
                     height: "1.5rem",
                     backgroundColor: isDarkMode ? "#374151" : "#F3F4F6",
                     borderRadius: "9999px",
@@ -1934,3 +1953,815 @@ This tactical approach leverages ${team}'s strengths while targeting ${opponent}
             </button>
           </div>
         </div>
+
+        {/* Main Content Area */}
+        {activeTab === 'create' && (
+          <div style={{
+            padding: "1.5rem",
+            transition: "padding 0.3s ease"
+          }}>
+            {/* Team Selection */}
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "1rem",
+              marginBottom: "1.5rem"
+            }}>
+              <div>
+                <label 
+                  htmlFor="team-select"
+                  style={{
+                    display: "block",
+                    marginBottom: "0.5rem",
+                    fontSize: "0.875rem",
+                    fontWeight: "500",
+                    color: isDarkMode ? "#F3F4F6" : "#111827",
+                    transition: "color 0.3s ease"
+                  }}
+                >
+                  Your Team
+                </label>
+                <select
+                  id="team-select"
+                  value={team}
+                  onChange={(e) => setTeam(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "0.625rem 0.75rem",
+                    backgroundColor: isDarkMode ? "#374151" : "white",
+                    color: isDarkMode ? "#F3F4F6" : "#111827",
+                    border: isDarkMode ? "1px solid #4B5563" : "1px solid #D1D5DB",
+                    borderRadius: "0.375rem",
+                    appearance: "none",
+                    backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
+                    backgroundPosition: "right 0.5rem center",
+                    backgroundRepeat: "no-repeat",
+                    backgroundSize: "1.5em 1.5em",
+                    transition: "all 0.3s ease"
+                  }}
+                >
+                  <option value="">Select your team</option>
+                  {teamsList.length > 0 ? (
+                    teamsList.map((team, index) => (
+                      <option key={index} value={team.name}>{team.name}</option>
+                    ))
+                  ) : (
+                    // Fallback options if API call fails
+                    <>
+                      <option value="Arsenal">Arsenal</option>
+                      <option value="Chelsea">Chelsea</option>
+                      <option value="Liverpool">Liverpool</option>
+                      <option value="Manchester City">Manchester City</option>
+                      <option value="Manchester United">Manchester United</option>
+                      <option value="Tottenham">Tottenham</option>
+                      <option value="Bayern Munich">Bayern Munich</option>
+                      <option value="Borussia Dortmund">Borussia Dortmund</option>
+                      <option value="Barcelona">Barcelona</option>
+                      <option value="Real Madrid">Real Madrid</option>
+                      <option value="PSG">PSG</option>
+                      <option value="AC Milan">AC Milan</option>
+                      <option value="Inter Milan">Inter Milan</option>
+                      <option value="Juventus">Juventus</option>
+                    </>
+                  )}
+                </select>
+              </div>
+
+              <div>
+                <label 
+                  htmlFor="opponent-select"
+                  style={{
+                    display: "block",
+                    marginBottom: "0.5rem",
+                    fontSize: "0.875rem",
+                    fontWeight: "500",
+                    color: isDarkMode ? "#F3F4F6" : "#111827",
+                    transition: "color 0.3s ease"
+                  }}
+                >
+                  Opponent
+                </label>
+                <select
+                  id="opponent-select"
+                  value={opponent}
+                  onChange={(e) => setOpponent(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "0.625rem 0.75rem",
+                    backgroundColor: isDarkMode ? "#374151" : "white",
+                    color: isDarkMode ? "#F3F4F6" : "#111827",
+                    border: isDarkMode ? "1px solid #4B5563" : "1px solid #D1D5DB",
+                    borderRadius: "0.375rem",
+                    appearance: "none",
+                    backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
+                    backgroundPosition: "right 0.5rem center",
+                    backgroundRepeat: "no-repeat",
+                    backgroundSize: "1.5em 1.5em",
+                    transition: "all 0.3s ease"
+                  }}
+                >
+                  <option value="">Select opponent</option>
+                  {teamsList.length > 0 ? (
+                    teamsList.map((team, index) => (
+                      <option key={index} value={team.name}>{team.name}</option>
+                    ))
+                  ) : (
+                    // Fallback options if API call fails
+                    <>
+                      <option value="Arsenal">Arsenal</option>
+                      <option value="Chelsea">Chelsea</option>
+                      <option value="Liverpool">Liverpool</option>
+                      <option value="Manchester City">Manchester City</option>
+                      <option value="Manchester United">Manchester United</option>
+                      <option value="Tottenham">Tottenham</option>
+                      <option value="Bayern Munich">Bayern Munich</option>
+                      <option value="Borussia Dortmund">Borussia Dortmund</option>
+                      <option value="Barcelona">Barcelona</option>
+                      <option value="Real Madrid">Real Madrid</option>
+                      <option value="PSG">PSG</option>
+                      <option value="AC Milan">AC Milan</option>
+                      <option value="Inter Milan">Inter Milan</option>
+                      <option value="Juventus">Juventus</option>
+                    </>
+                  )}
+                </select>
+              </div>
+            </div>
+
+            {/* Generate Button */}
+            <div style={{
+              display: "flex",
+              justifyContent: "center",
+              gap: "0.75rem",
+              marginBottom: "2rem"
+            }}>
+              <button
+                onClick={fetchTactics}
+                disabled={!team || !opponent || loading}
+                style={{
+                  padding: "0.75rem 2rem",
+                  backgroundColor: !team || !opponent ? (isDarkMode ? "#6B7280" : "#E5E7EB") : (isDarkMode ? "#2563EB" : "#3B82F6"),
+                  color: "white",
+                  border: "none",
+                  borderRadius: "0.5rem",
+                  fontWeight: "600",
+                  cursor: !team || !opponent || loading ? "not-allowed" : "pointer",
+                  transition: "all 0.3s ease",
+                  opacity: loading ? "0.7" : "1",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem"
+                }}
+              >
+                {loading ? (
+                  <>
+                    <svg className="animate-spin" style={{
+                      animation: "spin 1s linear infinite",
+                      width: "1.25rem",
+                      height: "1.25rem"
+                    }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" style={{
+                        opacity: "0.25"
+                      }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" style={{
+                        opacity: "0.75"
+                      }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Generating Tactics...
+                  </>
+                ) : (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                    Generate Tactics
+                  </>
+                )}
+              </button>
+              
+              <button
+                onClick={simulateMatch}
+                disabled={!team || !opponent || loading}
+                style={{
+                  padding: "0.75rem 1.5rem",
+                  backgroundColor: !team || !opponent ? (isDarkMode ? "#6B7280" : "#E5E7EB") : (isDarkMode ? "#0D9488" : "#0D9488"),
+                  color: "white",
+                  border: "none",
+                  borderRadius: "0.5rem",
+                  fontWeight: "600",
+                  cursor: !team || !opponent || loading ? "not-allowed" : "pointer",
+                  transition: "all 0.3s ease",
+                  opacity: loading ? "0.7" : "1",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem"
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 3v18"/>
+                  <rect x="5" y="6" width="14" height="14" rx="7"/>
+                </svg>
+                Simulate Match
+              </button>
+            </div>
+
+            {/* Loading Progress */}
+            {loading && (
+              <div style={{
+                marginBottom: "2rem"
+              }}>
+                <div style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "0.5rem"
+                }}>
+                  <span style={{
+                    fontSize: "0.875rem",
+                    color: isDarkMode ? "#D1D5DB" : "#6B7280"
+                  }}>
+                    Analyzing tactical data...
+                  </span>
+                  <span style={{
+                    fontSize: "0.875rem",
+                    fontWeight: "600",
+                    color: isDarkMode ? "#D1D5DB" : "#6B7280"
+                  }}>
+                    {loadingProgress}%
+                  </span>
+                </div>
+                <div style={{
+                  height: "0.5rem",
+                  backgroundColor: isDarkMode ? "#4B5563" : "#E5E7EB",
+                  borderRadius: "9999px",
+                  overflow: "hidden"
+                }}>
+                  <div 
+                    style={{
+                      height: "100%",
+                      backgroundColor: isDarkMode ? "#2563EB" : "#3B82F6",
+                      borderRadius: "9999px",
+                      width: `${loadingProgress}%`,
+                      transition: "width 0.3s ease"
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Formation Visualization and Analysis */}
+            {tactics && !showSimulation && (
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "2rem",
+                marginBottom: "2rem"
+              }}>
+                {/* Formation Visualization */}
+                <div style={{
+                  backgroundColor: "#15803D",
+                  borderRadius: "0.75rem",
+                  overflow: "hidden",
+                  aspectRatio: "4/3",
+                  position: "relative",
+                  border: isDarkMode ? "1px solid #374151" : "1px solid #E5E7EB",
+                }}>
+                  {/* Field markings */}
+                  <div style={{
+                    position: "absolute",
+                    top: "0",
+                    left: "0",
+                    width: "100%",
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                  }}>
+                    {/* Center circle */}
+                    <div style={{
+                      position: "absolute",
+                      top: "50%",
+                      left: "50%",
+                      transform: "translate(-50%, -50%)",
+                      width: "30%",
+                      height: "20%",
+                      borderRadius: "50%",
+                      border: "2px solid rgba(255, 255, 255, 0.4)"
+                    }} />
+                    
+                    {/* Center line */}
+                    <div style={{
+                      position: "absolute",
+                      top: "50%",
+                      left: "0",
+                      width: "100%",
+                      height: "2px",
+                      backgroundColor: "rgba(255, 255, 255, 0.4)"
+                    }} />
+                    
+                    {/* Penalty areas */}
+                    <div style={{
+                      position: "absolute",
+                      top: "0",
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      width: "60%",
+                      height: "20%",
+                      border: "2px solid rgba(255, 255, 255, 0.4)",
+                      borderTop: "none"
+                    }} />
+                    
+                    <div style={{
+                      position: "absolute",
+                      bottom: "0",
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      width: "60%",
+                      height: "20%",
+                      border: "2px solid rgba(255, 255, 255, 0.4)",
+                      borderBottom: "none"
+                    }} />
+                    
+                    {/* Goal areas */}
+                    <div style={{
+                      position: "absolute",
+                      top: "0",
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      width: "20%",
+                      height: "8%",
+                      border: "2px solid rgba(255, 255, 255, 0.4)",
+                      borderTop: "none"
+                    }} />
+                    
+                    <div style={{
+                      position: "absolute",
+                      bottom: "0",
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      width: "20%",
+                      height: "8%",
+                      border: "2px solid rgba(255, 255, 255, 0.4)",
+                      borderBottom: "none"
+                    }} />
+                  </div>
+                  
+                  {/* Formation visualization */}
+                  {renderFormationVisualization()}
+                </div>
+                
+                {/* Tactical Analysis */}
+                <div style={{
+                  backgroundColor: isDarkMode ? "#1F2937" : "white",
+                  padding: "1.5rem",
+                  borderRadius: "0.75rem",
+                  border: isDarkMode ? "1px solid #374151" : "1px solid #E5E7EB",
+                  height: "100%", 
+                  overflow: "auto"
+                }}>
+                  <div 
+                    dangerouslySetInnerHTML={{ __html: formatTacticalAnalysis(tactics) }}
+                    style={{
+                      fontSize: "0.9375rem",
+                      lineHeight: "1.5"
+                    }}
+                  />
+                  
+                  <div style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    gap: "0.75rem",
+                    marginTop: "1.5rem"
+                  }}>
+                    <button
+                      onClick={copyToClipboard}
+                      style={{
+                        padding: "0.5rem 1rem",
+                        backgroundColor: isDarkMode ? "#374151" : "#F3F4F6",
+                        color: isDarkMode ? "#F3F4F6" : "#111827",
+                        border: "none",
+                        borderRadius: "0.375rem",
+                        fontWeight: "500",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        fontSize: "0.875rem",
+                        transition: "background-color 0.15s ease-in-out"
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                      </svg>
+                      Copy
+                    </button>
+                    
+                    <button
+                      onClick={shareAnalysis}
+                      style={{
+                        padding: "0.5rem 1rem",
+                        backgroundColor: isDarkMode ? "#374151" : "#F3F4F6",
+                        color: isDarkMode ? "#F3F4F6" : "#111827",
+                        border: "none",
+                        borderRadius: "0.375rem",
+                        fontWeight: "500",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        fontSize: "0.875rem",
+                        transition: "background-color 0.15s ease-in-out"
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="18" cy="5" r="3"></circle>
+                        <circle cx="6" cy="12" r="3"></circle>
+                        <circle cx="18" cy="19" r="3"></circle>
+                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                      </svg>
+                      Share
+                    </button>
+                    
+                    <button
+                      onClick={saveCurrentFormation}
+                      style={{
+                        padding: "0.5rem 1rem",
+                        backgroundColor: isDarkMode ? "#1D4ED8" : "#2563EB",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "0.375rem",
+                        fontWeight: "500",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        fontSize: "0.875rem",
+                        transition: "background-color 0.15s ease-in-out"
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                      </svg>
+                      Save
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Match Simulation Results */}
+            {showSimulation && renderSimulationResults()}
+            
+            {/* Recent Formations */}
+            {history.length > 0 && !tactics && (
+              <div style={{
+                marginTop: "2rem"
+              }}>
+                <h2 style={{
+                  fontSize: "1.25rem",
+                  fontWeight: "600",
+                  marginBottom: "1rem",
+                  color: isDarkMode ? "#F3F4F6" : "#111827"
+                }}>
+                  Recent Formations
+                </h2>
+                
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
+                  gap: "1rem"
+                }}>
+                  {history.map((item, index) => (
+                    <div 
+                      key={index}
+                      onClick={() => loadHistoryItem(item)}
+                      style={{
+                        backgroundColor: isDarkMode ? "#1F2937" : "white",
+                        padding: "1rem",
+                        borderRadius: "0.5rem",
+                        border: isDarkMode ? "1px solid #374151" : "1px solid #E5E7EB",
+                        cursor: "pointer",
+                        transition: "all 0.15s ease-in-out"
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.transform = "translateY(-2px)";
+                        e.currentTarget.style.boxShadow = "0 4px 6px rgba(0, 0, 0, 0.1)";
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.transform = "translateY(0)";
+                        e.currentTarget.style.boxShadow = "none";
+                      }}
+                    >
+                      <div style={{
+                        fontSize: "0.875rem",
+                        fontWeight: "600",
+                        marginBottom: "0.5rem",
+                        color: isDarkMode ? "#F3F4F6" : "#111827"
+                      }}>
+                        {item.team} vs {item.opponent}
+                      </div>
+                      
+                      <div style={{
+                        fontSize: "0.75rem",
+                        color: isDarkMode ? "#9CA3AF" : "#6B7280",
+                        marginBottom: "0.5rem"
+                      }}>
+                        {item.date}
+                      </div>
+                      
+                      <div style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem"
+                      }}>
+                        <span style={{
+                          padding: "0.25rem 0.5rem",
+                          backgroundColor: isDarkMode ? "#374151" : "#F3F4F6",
+                          color: isDarkMode ? "#F3F4F6" : "#111827",
+                          borderRadius: "0.25rem",
+                          fontSize: "0.75rem",
+                          fontWeight: "500"
+                        }}>
+                          {item.formation}
+                        </span>
+                        
+                        <span style={{
+                          fontSize: "0.75rem",
+                          color: isDarkMode ? "#9CA3AF" : "#6B7280"
+                        }}>
+                          Formation
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Community Tab Content */}
+        {activeTab === 'community' && renderCommunityTab()}
+        
+        {/* Leaderboard Tab Content */}
+        {activeTab === 'leaderboard' && renderLeaderboardTab()}
+        
+        {/* Match History Sidebar */}
+        {showHistory && (
+          <div style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 50
+          }}>
+            <div style={{
+              backgroundColor: isDarkMode ? "#1F2937" : "white",
+              borderRadius: "0.75rem",
+              width: "90%",
+              maxWidth: "32rem",
+              maxHeight: "90vh",
+              overflow: "auto",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)"
+            }}>
+              <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "1rem 1.5rem",
+                borderBottom: isDarkMode ? "1px solid #374151" : "1px solid #E5E7EB"
+              }}>
+                <h3 style={{
+                  fontSize: "1.25rem",
+                  fontWeight: "600",
+                  color: isDarkMode ? "#F3F4F6" : "#111827"
+                }}>
+                  Recent Analyses
+                </h3>
+                
+                <button
+                  onClick={() => setShowHistory(false)}
+                  style={{
+                    backgroundColor: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: "0.5rem",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: isDarkMode ? "#9CA3AF" : "#6B7280"
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+              
+              <div style={{
+                padding: "1rem"
+              }}>
+                {history.length === 0 ? (
+                  <div style={{
+                    padding: "2rem",
+                    textAlign: "center",
+                    color: isDarkMode ? "#9CA3AF" : "#6B7280"
+                  }}>
+                    No analysis history yet.
+                  </div>
+                ) : (
+                  history.map((item, index) => (
+                    <div 
+                      key={index}
+                      onClick={() => loadHistoryItem(item)}
+                      style={{
+                        padding: "1rem",
+                        borderBottom: index < history.length - 1 ? (isDarkMode ? "1px solid #374151" : "1px solid #E5E7EB") : "none",
+                        cursor: "pointer",
+                        transition: "background-color 0.15s ease-in-out"
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.backgroundColor = isDarkMode ? "#374151" : "#F9FAFB";
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.backgroundColor = "transparent";
+                      }}
+                    >
+                      <div style={{
+                        fontSize: "0.875rem",
+                        fontWeight: "600",
+                        marginBottom: "0.25rem",
+                        color: isDarkMode ? "#F3F4F6" : "#111827"
+                      }}>
+                        {item.team} vs {item.opponent}
+                      </div>
+                      
+                      <div style={{
+                        display: "flex",
+                        justifyContent: "space-between"
+                      }}>
+                        <div style={{
+                          backgroundColor: isDarkMode ? "#1E3A8A" : "#DBEAFE",
+                          color: isDarkMode ? "#93C5FD" : "#1E40AF",
+                          fontSize: "0.75rem",
+                          fontWeight: "500",
+                          padding: "0.125rem 0.5rem",
+                          borderRadius: "9999px"
+                        }}>
+                          {item.formation}
+                        </div>
+                        
+                        <div style={{
+                          fontSize: "0.75rem",
+                          color: isDarkMode ? "#9CA3AF" : "#6B7280"
+                        }}>
+                          {item.date}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Saved Formations Sidebar */}
+        {showSaved && (
+          <div style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 50
+          }}>
+            <div style={{
+              backgroundColor: isDarkMode ? "#1F2937" : "white",
+              borderRadius: "0.75rem",
+              width: "90%",
+              maxWidth: "32rem",
+              maxHeight: "90vh",
+              overflow: "auto",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)"
+            }}>
+              <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "1rem 1.5rem",
+                borderBottom: isDarkMode ? "1px solid #374151" : "1px solid #E5E7EB"
+              }}>
+                <h3 style={{
+                  fontSize: "1.25rem",
+                  fontWeight: "600",
+                  color: isDarkMode ? "#F3F4F6" : "#111827"
+                }}>
+                  Saved Formations
+                </h3>
+                
+                <button
+                  onClick={() => setShowSaved(false)}
+                  style={{
+                    backgroundColor: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: "0.5rem",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: isDarkMode ? "#9CA3AF" : "#6B7280"
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+              
+              <div style={{
+                padding: "1rem"
+              }}>
+                {savedFormations.length === 0 ? (
+                  <div style={{
+                    padding: "2rem",
+                    textAlign: "center",
+                    color: isDarkMode ? "#9CA3AF" : "#6B7280"
+                  }}>
+                    No saved formations yet.
+                  </div>
+                ) : (
+                  savedFormations.map((item, index) => (
+                    <div 
+                      key={index}
+                      onClick={() => loadSavedFormation(item)}
+                      style={{
+                        padding: "1rem",
+                        borderBottom: index < savedFormations.length - 1 ? (isDarkMode ? "1px solid #374151" : "1px solid #E5E7EB") : "none",
+                        cursor: "pointer",
+                        transition: "background-color 0.15s ease-in-out"
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.backgroundColor = isDarkMode ? "#374151" : "#F9FAFB";
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.backgroundColor = "transparent";
+                      }}
+                    >
+                      <div style={{
+                        fontSize: "0.875rem",
+                        fontWeight: "600",
+                        marginBottom: "0.25rem",
+                        color: isDarkMode ? "#F3F4F6" : "#111827"
+                      }}>
+                        {item.team} vs {item.opponent}
+                      </div>
+                      
+                      <div style={{
+                        display: "flex",
+                        justifyContent: "space-between"
+                      }}>
+                        <div style={{
+                          backgroundColor: isDarkMode ? "#065F46" : "#D1FAE5",
+                          color: isDarkMode ? "#6EE7B7" : "#065F46",
+                          fontSize: "0.75rem",
+                          fontWeight: "500",
+                          padding: "0.125rem 0.5rem",
+                          borderRadius: "9999px"
+                        }}>
+                          {item.formation}
+                        </div>
+                        
+                        <div style={{
+                          fontSize: "0.75rem",
+                          color: isDarkMode ? "#9CA3AF" : "#6B7280"
+                        }}>
+                          {item.date}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
