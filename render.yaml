@@ -3,8 +3,8 @@ services:
   - type: web
     name: stattact-backend
     runtime: python
-    rootDir: backend  # This tells Render to look for files in this directory
-    buildCommand: pip install -r requirements.txt  # Now looks for requirements.txt in the backend folder
+    rootDir: backend  # Add this line
+    buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: OPENAI_API_KEY
@@ -14,11 +14,11 @@ services:
       - key: PORT
         value: 10000
 
-  # Frontend service (if you're deploying it on Render)
+  # Frontend service (if applicable)
   - type: web
     name: stattact-frontend
     runtime: nodejs
-    rootDir: frontend
+    rootDir: frontend  # Add this line
     buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
